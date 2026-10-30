@@ -1,0 +1,98 @@
+The visual is on your demo chart now and the EA is live there. It can now trade about 7–8 times a day, but in testing those extra trades lost money.
+
+1. The visual
+
+The chart now looks like your reference images:
+- footprint cells shown as "sell × buy", with coloured imbalances;
+- its own price scale, a price tag and the session POC line;
+- a table under the bars showing Volume / Delta / Cum Delta / Ask / Bid, with a countdown to the bar close;
+- the header buttons and the mini session chart.
+
+The EA loads it onto its own chart automatically, and it redraws in about 4 ms.
+
+- Side panels (Chart Analyst, Signal Meter, order-book ladder, Time & Sales, volume profile): on your docked chart at 150% Windows scaling they start hidden because the chart is too narrow. Click SIDE PANELS in the header to show them. The T key changes the colour theme.
+- The Chart Analyst and the Signal Meter are display only. A "STRONG BUY" there is not what the EA trades on.
+- Your trades appear on the footprint: entry, SL and TP lines while a trade is open, and entry/exit markers once it's closed. This hasn't been seen with a real trade yet; the first demo trade will show it.
+
+Screenshots are in build\shots\, and README_INDICATOR.md explains every button.
+
+2. How the trade logic works
+
+Every 5 minutes, when a bar closes, the EA builds that bar's footprint in 0.40-dollar price rows, then:
+
+1. Looks for a setup.
+   - Exhaustion (almost all trades). The bar makes a new 20-bar low, but selling dries up at the bottom. The lowest row holds 3% or less of the bar's activity, selling gets smaller row by row towards the low, and the bar closes in its upper 60%. The idea: sellers ran out, so buy. Shorts are the mirror image at a 20-bar high.
+   - Zone retest (about one a month). Three or more stacked buy imbalances form a zone. Price comes back into it within 30 bars, buyers defend it, and the 1-hour trend agrees. It enters with a market order.
+   - Absorption. Almost never fires on this broker's data.
+2. Scores the signal from 0 to 5 points, one each for:
+   - the 1-hour trend agreeing;
+   - being near a key level;
+   - a strong imbalance at the extreme;
+   - a recent delta divergence;
+   - normal volatility.
+
+   It needs at least 1 point.
+3. Filters. It needs:
+   - a spread of at most 0.15 × ATR;
+   - at least 60 ticks in the bar;
+   - no runaway volatility;
+   - no high-impact news within 15 minutes;
+   - not after 18:00 on Friday;
+   - only one trade at a time.
+4. Entry. A buy-stop at the signal bar's high, valid for 10 minutes. It's cancelled if price breaks the bar's low first. The stop goes just below the bar's low, and the target is 2R (twice the risk).
+5. Management.
+   - At +1R it closes half and moves the stop to break-even.
+   - From +1.5R it trails the stop 1 ATR behind price.
+   - After 1 hour, it closes the trade if it isn't at least +0.3R.
+6. Risk.
+   - Each trade risks 0.5% of equity.
+   - At most 10 trades a day, and it stops for the day at −2%.
+   - After 3 losses in a row, it pauses 60 minutes.
+   - At a 15% drawdown it closes everything and stops for good.
+
+docs\TRADE_LOGIC.md has the full version with a real worked trade.
+
+3. Getting 5–6 trades a day
+
+The original settings lost most signals to the 08:00–20:00 session filter and the grade-B minimum. Of 1,296 signals in June–August, only 13 became trades. I opened up those two gates (all-day session, grade C with at least 1 point) and raised the daily cap from 4 to 10. A 60-minute pause after 3 losses in a row now replaces "stop for the day". The target is now 2R instead of 1.5R.
+
+┌────────────────────────┬────────────┬────────┬─────────────┬───────┐
+│          Test          │ Trades/day │  Win   │  Avg per    │ Total │
+│                        │            │  rate  │    trade    │       │
+├────────────────────────┼────────────┼────────┼─────────────┼───────┤
+│ Original settings,     │ 0.2        │ 62%    │ +0.21R      │ +2.8R │
+│ Jun–Aug                │            │        │             │       │
+├────────────────────────┼────────────┼────────┼─────────────┼───────┤
+│ New, Feb–May           │ 7.0        │ 50%    │ 0.00R       │ +0.7R │
+├────────────────────────┼────────────┼────────┼─────────────┼───────┤
+│ New, Jun–Aug (tuned on │ 7.3        │ 51%    │ +0.06R      │ +28R  │
+│  this)                 │            │        │             │       │
+├────────────────────────┼────────────┼────────┼─────────────┼───────┤
+│ New, Sep–Oct (unseen   │ 7.9        │ 45%    │ −0.11R      │ −35R  │
+│ test)                  │            │        │             │       │
+└────────────────────────┴────────────┴────────┴─────────────┴───────┘
+
+With the kill switch on, the September–October test stopped on day 12 at about −15% of the account.
+
+The extra trades work mechanically, but the setups showed no edge on this broker's data. It's roughly break-even from February to August and clearly losing in September–October. Fine to watch on demo; I wouldn't use it with real money. The analysis suggests 0.25% risk per trade with a 10% kill switch for this trade rate. I left yours at 0.5%; say if you want the change.
+
+4. Running now and verified
+
+- Everything compiles with 0 errors and 0 warnings. Engine tests pass 100/100 and signal tests 127/127.
+- The EA is LIVE on demo account 41276497 with the footprint on its chart; the news calendar loaded. Your original settings are saved in FootprintTrader_spec.set.
+- Today's missed bar came from the terminal reconnecting six times, which froze the EA for 2 minutes while it fetched tick data. The EA now still places the order for a bar up to 3 minutes late. The real fix belongs in the engine (stop fetching while disconnected) and isn't done yet.
+- If MT5 is closed, restart it with the same command as before; the EA and the visual come back together.
+
+✻ Churned for 5h 24m 20s · done Tuesday 8:19 PM
+
+※ recap: The EA now runs live on your demo account with the footprint visual and takes about 7–8 trades a day, but testing showed no edge. Next, decide whether to lower risk per trade from 0.5% to 0.25%. (disable recaps in /config)
+Read ..\..\..\..\.claude\projects\C--Users-ganzo-OneDrive-Ganzorig-Trading-Experiments-Footprint\memory\footprint-ea-project.md (24 lines)
+Referenced file DECISIONS.md
+Read docs\TRADE_LOGIC.md (141 lines)
+Referenced file MQL5\Include\OrderFlowFP\Trade\FPFilters.mqh
+Referenced file README_EA.md
+Skills restored (superpowers:brainstorming)
+SessionStart:compact hook error
+Failed with non-blocking status code: Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execu…
+
+● Compacted while idle, before the prompt cache expired · turn off with "idleCompaction": false in settings.json
