@@ -135,6 +135,7 @@ Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `Inp
 | `InpDumpBars` | false | write `dump_<sym>_<tf>_bars/_rows.csv` (§8) |
 | `InpAttachIndicator` | false | add `OrderFlowFP\FootprintChart` to the chart, visuals only (fails gracefully if absent) |
 | `InpMaxSignalLagSec` | 10 | fixed |
+| `InpShowStatus` | true | v1.11. Without the FootprintChart indicator on the chart, the EA writes its status in the lower-left corner. With the indicator, the status is the coloured badge at the left of its header (see §6a) |
 | `InpMaxLatePendingSec` | **180** (spec: none) | Handles a bar processed later than `InpMaxSignalLagSec` but within this many seconds, i.e. a feed stall such as CopyTicks blocked during a reconnect:<br>• The bar is still evaluated.<br>• Only pending (stop/limit) entries whose level has not been crossed may be placed.<br>• Market entries and already-crossed levels are `FILTERED:LATE`.<br>• Bars before a break or weekend stay `SKIPPED:LATE`.<br>0 = spec behaviour |
 
 ### Research
@@ -294,6 +295,22 @@ Format: comma-separated, `.` decimals, times `yyyy.mm.dd hh:mi:ss` (server time)
 **Experts log prefixes:** `FT INIT`, `FT READY`, `FT WARMUP`, `FT SIGNAL`, `FT EXEC` (every request attempt with its retcode and policy), `FT RISK`, `FT RISKCHECK` (per stop-out: realised loss vs `riskMoney` and the risk target, for the ±10 % check), `FT STATE:RESTORED/RECOVERED/PENDING_CANCELLED`, `FT VIRT`, `FT TEST`, `FT MGMT` (bar-close management without a known ATR), `FT ASSERT`, `FT PERF` (OnTick timing at deinit), `FT ONTESTER`, `FT ENGINE` (tick-fetch errors, recovery, and any `Update()` call that blocked for 5 s or more).
 
 **Bar dump** (`InpDumpBars`): `dump_<sym>_<tf>_bars.csv` (`time,open,high,low,close,volume,delta,cumDelta,pocPrice,ticks,buyImbCount,sellImbCount,state,cvdValid`) and `_rows.csv` (`time,rowPrice,sell,buy,imbSell,imbBuy`). These are written by the engine's own writer, so they are byte-compatible with `FPDumpBars`. The EA dumps only the bars it processes (not skipped ones) and overwrites the files when it starts.
+
+## 6a. Is the EA running? The status badge (v1.11)
+
+The EA publishes its state every second. The FootprintChart header shows it as a coloured badge on the left; without the indicator the EA writes the same text in the lower-left corner of the chart.
+
+| Colour | Text | Meaning |
+|---|---|---|
+| Green | `EA LIVE - 3/10 today, 1 open` | Running in LIVE mode and allowed to enter |
+| Blue | `EA VIRTUAL - …` / `EA SIGNALS ONLY (no orders)` | Running, but it does not send real orders |
+| Orange | `EA PAUSED: DAILY LOSS` / `LOSS STREAK to 14:35` / `DAY CAP` | Running; new entries are blocked for now |
+| Orange | `EA LOADING` / `EA WARM-UP (no trades)` / `EA: FEED STALLED` | Running; history loading, warm-up, or the tick feed held or blocked in the last minute |
+| Red | `EA OFF` | No heartbeat for 15 s: the EA is not attached, the terminal is closed, or it is frozen |
+| Red | `EA STOPPED: KILL SWITCH` | The kill switch fired; it stays off until you delete `FT_<symbol>_<magic>_KILL` / `_PEAK` (F3) or start once with `InpTestResetKill=true` |
+| Red | `EA: ALGO TRADING OFF` / `EA: NO CONNECTION` / `EA HALTED (assert)` | LIVE but trading disabled in the terminal, account or EA settings; no server connection; or the look-ahead assertion stopped the EA |
+
+If the EA "is not trading", read the badge first: a kill switch that fired weeks ago, SIGNALS_ONLY mode or AutoTrading off all look like "no trades" on the chart. The badge reads the EA with the indicator's `InpTradeMagic` (default 240611), which must equal the EA's `InpMagic`.
 
 ## 7. Validation protocol (03 §11)
 
@@ -481,14 +498,12 @@ Pick *Custom max* in the optimisation settings. A value > 0 needs PF_R > 1 and a
 
 - On Forex/CFD the engine measures quote activity, not traded volume (see the disclaimer). Validate with the placebo test.
 - A tick arriving exactly between the terminal's bar update and the engine's tick fetch can make one bar `SKIPPED:LATE` (rare, conservative).
-- `CopyTicks` inside the engine can block `OnTick` while the terminal re-synchronises its tick history after a reconnect (seen live: 135 s). Bars that close meanwhile are processed late:
-  - an untriggered pending entry is still placed (`InpMaxLatePendingSec`, 180 s);
-  - anything else is `FILTERED:LATE` / `SKIPPED:LATE`.
-  - The engine-side fix is described in `docs\decisions\frequency.md`.
-- **The auto row size (`InpBucketPoints=0`) can change the strategy.**
-  - When the M5 ATR at start-up exceeds 80 rows of the preset, the preset is rejected and an ATR rule is used.
-  - On 2026-02-02 this picked 2.0 instead of 0.40 for XAUUSD, and the EA then traded about 1 trade a day instead of 7.
-  - Pin it per symbol (XAUUSD: `InpBucketPoints=400`), identically in the indicator.
+- `CopyTicks` inside the engine can block `OnTick` while the terminal re-synchronises its tick history after a reconnect (seen live: 135 s before v1.11).
+  - Since v1.11 the engine does not fetch ticks while the terminal is disconnected, for 5 s after it reconnects, and then until the symbol reports synchronised (at most 30 s). The log shows `tick feed held (...)` and `tick feed resumed`; the status badge shows `FEED STALLED`.
+  - A disconnect that starts in the middle of a fetch can still block that one call. Bars that close meanwhile are processed late: an untriggered pending entry is still placed (`InpMaxLatePendingSec`, 180 s); anything else is `FILTERED:LATE` / `SKIPPED:LATE`.
+- **The auto row size (`InpBucketPoints=0`).**
+  - Before v1.11 the symbol preset was rejected when the M5 ATR at start-up was outside 6–80 rows; on 2026-02-02 this picked 2.0 instead of 0.40 for XAUUSD, and the EA traded about 1 trade a day instead of 7.
+  - Since v1.11 the preset is kept unless the ATR is below 2 or above 250 rows. Pinning it per symbol (XAUUSD: `InpBucketPoints=400`, identically in the indicator) is still the most robust setting.
 - **With the v1.10 defaults, expectancy is about zero.** The setups showed no robust edge on this quote-tick feed; see `docs\decisions\frequency.md`. At 0.5 % risk and about 7 trades a day:
   - expect drawdowns of 10–17 % within a quarter;
   - the 15 % kill switch has a 6–18 % chance per quarter of firing on noise.

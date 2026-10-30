@@ -9,6 +9,9 @@
 
 #include "FPAnalytics.mqh"
 
+#define FPP_PRESET_MIN_RATIO 2.0     // keep a symbol preset while ATR(14) / row size stays within this band
+#define FPP_PRESET_MAX_RATIO 250.0
+
 class CFPPresets
 {
 private:
@@ -199,8 +202,11 @@ public:
         {
          if(atr > 0.0)
            {
+            //--- A symbol preset is only replaced when it is absurd for the current ATR. The original 6-80 band
+            //--- (02 §5.4) made the row size depend on the volatility at start-up: on XAUUSD a volatile start
+            //--- picked 2.0 instead of 0.40 and the EA then traded ~1 a day instead of ~7 (frequency.md).
             double ratio = atr / ((double)bucket * point);
-            if(ratio < 6.0 || ratio > 80.0)
+            if(ratio < FPP_PRESET_MIN_RATIO || ratio > FPP_PRESET_MAX_RATIO)
               {
                how = how + " rejected (ATR/row=" + DoubleToString(ratio, 1) + ", preset " + IntegerToString(bucket) +
                      " pts) -> ATR rule";
