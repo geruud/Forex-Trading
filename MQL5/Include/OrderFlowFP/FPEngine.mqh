@@ -31,6 +31,8 @@
 #define FPE_PENDING_MAX_MS  120000     // live: pending -> nodata after 120 s since the first attempt
 #define FPE_MAX_ROWS        100000     // safety cap on the row span of one bar / profile
 #define FPE_MISMATCH_EVERY  50         // live-vs-rebuild summary every N live-closed bars
+#define FPE_RECONNECT_GRACE_MS 5000    // EA: no tick fetch for this long after the terminal reconnects
+#define FPE_RECONNECT_SYNC_MAX_MS 30000 // EA: after a reconnect, wait at most this long for SymbolIsSynchronized
 
 enum ENUM_FPE_LOADMODE
 {
@@ -98,6 +100,13 @@ private:
    ulong             m_loadStartMs;
    bool              m_wasConnected;
    bool              m_misalignWarned;
+   //--- EA feed guard: CopyTicks in an EA blocks (up to ~45 s per call) while the terminal re-synchronises
+   //--- its tick history, e.g. during a burst of reconnects. Never fetch while disconnected or right after a
+   //--- reconnect; the ticks are not lost, the next allowed fetch reads them from m_lastMsc.
+   bool              m_feedConn;
+   ulong             m_feedReconnMs;
+   bool              m_feedHeld;
+   long              m_feedHolds;
    //--- warm-up chunk in progress
    MqlTick           m_chunk[];
    bool              m_chunkActive;
@@ -176,6 +185,10 @@ private:
       m_loadStartMs = 0;
       m_wasConnected = true;
       m_misalignWarned = false;
+      m_feedConn = true;
+      m_feedReconnMs = 0;
+      m_feedHeld = false;
+      m_feedHolds = 0;
       m_chunkActive = false;
       m_chunkLo = 0;
       m_chunkPos = -1;
@@ -594,6 +607,61 @@ private:
       //--- the next boundary is >= bo+period, so its seed window starts >= bo+period-300 s
       m_ringCutoff = ((long)bo + m_period - FPE_SEED_SEC) * 1000;
       RingTrim();
+     }
+
+   //+---------------------------------------------------------------+
+   //| EA only (FPE_LOAD_BLOCKING): may we call CopyTicks* now?        |
+   //| False while the terminal is disconnected, and for               |
+   //| FPE_RECONNECT_GRACE_MS after it reconnects (and until the       |
+   //| symbol reports synchronised), because that is when the tick     |
+   //| history re-sync makes CopyTicks block OnTick for minutes.       |
+   //| The indicator, scripts and the tester are not affected.         |
+   //+---------------------------------------------------------------+
+   bool              FetchAllowed(void)
+     {
+      if(m_loadMode != FPE_LOAD_BLOCKING)
+         return true;
+      bool c = (TerminalInfoInteger(TERMINAL_CONNECTED) != 0);
+      string why = "";
+      if(!c)
+        {
+         m_feedConn = false;
+         why = "terminal disconnected";
+        }
+      else
+        {
+         if(!m_feedConn)
+           {
+            m_feedConn = true;
+            m_feedReconnMs = GetTickCount64();
+           }
+         if(m_feedReconnMs > 0)
+           {
+            ulong since = GetTickCount64() - m_feedReconnMs;
+            if(since < FPE_RECONNECT_GRACE_MS)
+               why = "reconnect grace";
+            else
+               //--- wait for the symbol to report synchronised, but never longer than FPE_RECONNECT_SYNC_MAX_MS
+               if(!SymbolIsSynchronized(m_symbol) && since < FPE_RECONNECT_SYNC_MAX_MS)
+                  why = "symbol not synchronised after reconnect";
+               else
+                  m_feedReconnMs = 0;
+           }
+        }
+      if(why == "")
+        {
+         if(m_feedHeld)
+            Print("OrderFlowFP: tick feed resumed after ", m_feedHolds, " held fetch(es)");
+         m_feedHeld = false;
+         m_feedHolds = 0;
+         return true;
+        }
+      if(!m_feedHeld)
+         Print("OrderFlowFP: tick feed held (", why, ") - no CopyTicks until the connection is stable");
+      m_feedHeld = true;
+      m_feedHolds++;
+      m_lastError = "feed held: " + why;
+      return false;
      }
 
    //--- first tick of a new bar: rebuild the forming bar from a fresh CopyTicksRange, compare, lock
@@ -1603,6 +1671,8 @@ public:
       if(!m_inited)
          return false;
       ulong deadline = GetTickCount64() + (ulong)budgetMs;
+      if(!FetchAllowed())
+         return HistoryReady();
       if(!m_srcDecided)
         {
          TryDecideSource();
@@ -1640,6 +1710,9 @@ public:
       return (m_inited && m_srcDecided && m_listDone && m_pending == 0 && m_chronoDone);
      }
 
+   //--- EA only: true while tick fetches are held by the feed guard (disconnected / just reconnected)
+   bool              FeedHeld(void) const { return m_feedHeld; }
+
    //--- pull new ticks: CopyTicks(from = lastMsc) in batches of 100000, de-duplicated
    int               Update(void)
      {
@@ -1661,6 +1734,8 @@ public:
          m_lastK = 0;
          m_ringCutoff = m_lastMsc;
         }
+      if(!FetchAllowed())
+         return 0;
       int total = 0;
       for(int guard = 0; guard < 64; guard++)
         {

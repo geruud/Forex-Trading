@@ -8,6 +8,8 @@ FootprintTrader trades objective, **closed-bar** order-flow setups. It computes 
 | **ABS / EXH** | Absorption or exhaustion at a 20-bar extreme (reversal) | Stop order beyond the signal bar, valid 2 bars |
 | **DIV** | Delta divergence | Grade point for ABS/EXH; standalone trading is off |
 
+> **Defaults (v1.11).** Since v1.11 a signal needs at least **2** grade points (`InpMinPoints`), each trade risks **0.25 %** and the kill switch is at **10 %**. In the June–August test, ≥ 2 points gave about 3 trades a day at a slightly positive average instead of about 7 at break-even (`docs\decisions\frequency.md`). Set `InpMinPoints=1`, `InpRiskPct=0.5`, `InpMaxDDPct=15` for the v1.10 behaviour. The new **SIB** setup (§5, stacked-imbalance breakout) is off by default: study it in VIRTUAL first.
+>
 > **Defaults (v1.10).** The input defaults were retuned on 2026-10-27 so that, on XAUUSD M5, the EA takes about 5–7 trades per trading day instead of ~1 per week. In practice it trades the exhaustion setup almost exclusively. What changed and why: `docs\decisions\frequency.md`. The trade logic in plain language: `docs\TRADE_LOGIC.md`. The original spec defaults are in `MQL5\Presets\FootprintTrader_spec.set`; see §5 to restore them. **`InpTradeMode` still defaults to SIGNALS_ONLY**: choose VIRTUAL or LIVE (demo) to trade.
 
 > **Risk disclaimer.** On Forex/CFD feeds (e.g. XAUUSD) "volume" is the **tick count** of quote changes, not exchange volume. Delta and imbalances are derived from the mid-price path. No edge, profitability or fitness for live trading is implied. Run it on a **demo** account until the full validation protocol below has passed, and keep it there unless the placebo test (step 10) shows the order flow adds value on your feed. You alone are responsible for any use with real money.
@@ -115,13 +117,14 @@ These inputs differ from the spec:
 
 | Input | v1.10 default | Spec value |
 |---|---|---|
-| `InpMinGrade` / `InpMinPoints` (new) | C / 1 | B / 0 |
+| `InpMinGrade` / `InpMinPoints` (new) | C / 2 (v1.10: 1) | B / 0 |
 | `InpTradeStart` / `InpTradeEnd` | "00:00" / "00:00" (all day) | "08:00" / "20:00" |
 | `InpRevMaxATRRatio` (new; hard-coded in the spec) | 1.60 | 1.30 |
 | `InpTP_R_REV` | 2.0 | 1.5 |
 | `InpMaxTradesPerDay` | 10 | 4 |
 | `InpConsecPauseMin` (new) | 60 | 0 (= pause until the next day) |
-| `InpMaxDDPct` (kill switch) | 15 | 10 |
+| `InpMaxDDPct` (kill switch) | 10 (v1.10: 15) | 10 |
+| `InpRiskPct` | 0.25 (v1.10: 0.5) | 0.5 |
 | `InpMaxLatePendingSec` (new) | 180 | 0 (off) |
 
 Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `InpResearchAllSignals` false.
@@ -135,6 +138,7 @@ Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `Inp
 | `InpDumpBars` | false | write `dump_<sym>_<tf>_bars/_rows.csv` (§8) |
 | `InpAttachIndicator` | false | add `OrderFlowFP\FootprintChart` to the chart, visuals only (fails gracefully if absent) |
 | `InpMaxSignalLagSec` | 10 | fixed |
+| `InpShowStatus` | true | v1.11. Without the FootprintChart indicator on the chart, the EA writes its status in the lower-left corner. With the indicator, the status is the coloured badge at the left of its header (see §6a) |
 | `InpMaxLatePendingSec` | **180** (spec: none) | Handles a bar processed later than `InpMaxSignalLagSec` but within this many seconds, i.e. a feed stall such as CopyTicks blocked during a reconnect:<br>• The bar is still evaluated.<br>• Only pending (stop/limit) entries whose level has not been crossed may be placed.<br>• Market entries and already-crossed levels are `FILTERED:LATE`.<br>• Bars before a break or weekend stay `SKIPPED:LATE`.<br>0 = spec behaviour |
 
 ### Research
@@ -169,6 +173,13 @@ Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `Inp
 | `InpSZRMaxAgeBars` | 30 | 10 – 60 |
 | `InpSZRMaxTouches` | 1 | fixed |
 
+### SIB (v1.11 research setup)
+| Input | Default | Range |
+|---|---|---|
+| `InpSIBEnable` | false | Turn on for a VIRTUAL study. **Stacked-imbalance breakout**, a continuation: on the bar that forms a qualifying stack (the SZR rules: ≥ `InpSZRMinRows` rows, a tier ≥ `InpSZRMinTier` row, origin delta% ≥ `InpSZRMinDeltaPct`, close beyond the zone, height ≤ `InpSZRMaxHeightATR` × ATR), and that bar makes a new `InpSIBLookback`-bar high (long) / low (short): a buy-stop at its high, stop below the zone, cancelled if the bid falls back below the zone. HTF agreement and ATR ratio ≥ `InpSZRMinATRRatio` are required (as SZR); the target is `InpTP_R_SZR`. Points: tier-3 row, a key level inside the bar, TREND regime, delta% ≥ 2× the minimum, session CVD on its side. Placebo: an impulse bar (body ≥ 0.6 ATR, close in the outer 30 %) at the same breakout, stop below its open. `fp_analyze.py --research` cannot replay SIB yet; study it with normal VIRTUAL runs |
+| `InpSIBLookback` | 10 | 5 – 30 |
+| `InpSIBValidBars` | 2 | 1 – 4 |
+
 ### ABS/EXH
 | Input | Default | Range |
 |---|---|---|
@@ -191,7 +202,7 @@ Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `Inp
 | `InpDIVMaxBars` | 30 | fixed |
 | `InpDIVStandalone` | false | fixed |
 | `InpMinGrade` | **C** (spec B) | C / B / A |
-| `InpMinPoints` | **1** (new; spec 0) | 0 – 3. A signal trades only if its grade ≥ `InpMinGrade` **and** its points ≥ `InpMinPoints`. The grades are unchanged (A ≥ 4, B = 3, C ≤ 2 points) |
+| `InpMinPoints` | **2** (v1.11; v1.10 1; spec 0) | 0 – 3. A signal trades only if its grade ≥ `InpMinGrade` **and** its points ≥ `InpMinPoints`. The grades are unchanged (A ≥ 4, B = 3, C ≤ 2 points) |
 
 ### Filters
 | Input | Default | Range |
@@ -212,13 +223,13 @@ Unchanged new inputs: `InpSZRMinATRRatio` 0.85 (hard-coded in the spec) and `Inp
 ### Risk
 | Input | Default | Range |
 |---|---|---|
-| `InpRiskPct` | 0.5 | 0.1 – 1.0 (`docs\decisions\frequency.md` argues for 0.25 at this frequency) |
+| `InpRiskPct` | **0.25** (v1.11; v1.10 and spec 0.5) | 0.1 – 1.0 (`docs\decisions\frequency.md`: 0.25 keeps the kill switch from firing on noise) |
 | `InpAllowMinLot` | false | fixed |
 | `InpMaxTradesPerDay` | **10** (spec 4) | fixed (0 = off) |
 | `InpMaxDailyLossPct` | 2.0 | fixed (0 = off) |
 | `InpMaxConsecLosses` | 3 | fixed (0 = off) |
 | `InpConsecPauseMin` | **60** (new; spec 0) | After `InpMaxConsecLosses` losses in a row, no new entries for this many minutes; then a new streak starts. 0 = spec: no entries until the next server day |
-| `InpMaxDDPct` | **15** (spec 10) | Kill switch: % equity drawdown from the recorded peak (0 = off) |
+| `InpMaxDDPct` | **10** (v1.11 = spec; v1.10 15) | Kill switch: % equity drawdown from the recorded peak (0 = off) |
 
 ### Exits / Execution
 | Input | Default | Range |
@@ -294,6 +305,22 @@ Format: comma-separated, `.` decimals, times `yyyy.mm.dd hh:mi:ss` (server time)
 **Experts log prefixes:** `FT INIT`, `FT READY`, `FT WARMUP`, `FT SIGNAL`, `FT EXEC` (every request attempt with its retcode and policy), `FT RISK`, `FT RISKCHECK` (per stop-out: realised loss vs `riskMoney` and the risk target, for the ±10 % check), `FT STATE:RESTORED/RECOVERED/PENDING_CANCELLED`, `FT VIRT`, `FT TEST`, `FT MGMT` (bar-close management without a known ATR), `FT ASSERT`, `FT PERF` (OnTick timing at deinit), `FT ONTESTER`, `FT ENGINE` (tick-fetch errors, recovery, and any `Update()` call that blocked for 5 s or more).
 
 **Bar dump** (`InpDumpBars`): `dump_<sym>_<tf>_bars.csv` (`time,open,high,low,close,volume,delta,cumDelta,pocPrice,ticks,buyImbCount,sellImbCount,state,cvdValid`) and `_rows.csv` (`time,rowPrice,sell,buy,imbSell,imbBuy`). These are written by the engine's own writer, so they are byte-compatible with `FPDumpBars`. The EA dumps only the bars it processes (not skipped ones) and overwrites the files when it starts.
+
+## 6a. Is the EA running? The status badge (v1.11)
+
+The EA publishes its state every second. The FootprintChart header shows it as a coloured badge on the left; without the indicator the EA writes the same text in the lower-left corner of the chart.
+
+| Colour | Text | Meaning |
+|---|---|---|
+| Green | `EA LIVE - 3/10 today, 1 open` | Running in LIVE mode and allowed to enter |
+| Blue | `EA VIRTUAL - …` / `EA SIGNALS ONLY (no orders)` | Running, but it does not send real orders |
+| Orange | `EA PAUSED: DAILY LOSS` / `LOSS STREAK to 14:35` / `DAY CAP` | Running; new entries are blocked for now |
+| Orange | `EA LOADING` / `EA WARM-UP (no trades)` / `EA: FEED STALLED` | Running; history loading, warm-up, or the tick feed held or blocked in the last minute |
+| Red | `EA OFF` | No heartbeat for 15 s: the EA is not attached, the terminal is closed, or it is frozen |
+| Red | `EA STOPPED: KILL SWITCH` | The kill switch fired; it stays off until you delete `FT_<symbol>_<magic>_KILL` / `_PEAK` (F3) or start once with `InpTestResetKill=true` |
+| Red | `EA: ALGO TRADING OFF` / `EA: NO CONNECTION` / `EA HALTED (assert)` | LIVE but trading disabled in the terminal, account or EA settings; no server connection; or the look-ahead assertion stopped the EA |
+
+If the EA "is not trading", read the badge first: a kill switch that fired weeks ago, SIGNALS_ONLY mode or AutoTrading off all look like "no trades" on the chart. The badge reads the EA with the indicator's `InpTradeMagic` (default 240611), which must equal the EA's `InpMagic`.
 
 ## 7. Validation protocol (03 §11)
 
@@ -481,14 +508,12 @@ Pick *Custom max* in the optimisation settings. A value > 0 needs PF_R > 1 and a
 
 - On Forex/CFD the engine measures quote activity, not traded volume (see the disclaimer). Validate with the placebo test.
 - A tick arriving exactly between the terminal's bar update and the engine's tick fetch can make one bar `SKIPPED:LATE` (rare, conservative).
-- `CopyTicks` inside the engine can block `OnTick` while the terminal re-synchronises its tick history after a reconnect (seen live: 135 s). Bars that close meanwhile are processed late:
-  - an untriggered pending entry is still placed (`InpMaxLatePendingSec`, 180 s);
-  - anything else is `FILTERED:LATE` / `SKIPPED:LATE`.
-  - The engine-side fix is described in `docs\decisions\frequency.md`.
-- **The auto row size (`InpBucketPoints=0`) can change the strategy.**
-  - When the M5 ATR at start-up exceeds 80 rows of the preset, the preset is rejected and an ATR rule is used.
-  - On 2026-02-02 this picked 2.0 instead of 0.40 for XAUUSD, and the EA then traded about 1 trade a day instead of 7.
-  - Pin it per symbol (XAUUSD: `InpBucketPoints=400`), identically in the indicator.
+- `CopyTicks` inside the engine can block `OnTick` while the terminal re-synchronises its tick history after a reconnect (seen live: 135 s before v1.11).
+  - Since v1.11 the engine does not fetch ticks while the terminal is disconnected, for 5 s after it reconnects, and then until the symbol reports synchronised (at most 30 s). The log shows `tick feed held (...)` and `tick feed resumed`; the status badge shows `FEED STALLED`.
+  - A disconnect that starts in the middle of a fetch can still block that one call. Bars that close meanwhile are processed late: an untriggered pending entry is still placed (`InpMaxLatePendingSec`, 180 s); anything else is `FILTERED:LATE` / `SKIPPED:LATE`.
+- **The auto row size (`InpBucketPoints=0`).**
+  - Before v1.11 the symbol preset was rejected when the M5 ATR at start-up was outside 6–80 rows; on 2026-02-02 this picked 2.0 instead of 0.40 for XAUUSD, and the EA traded about 1 trade a day instead of 7.
+  - Since v1.11 the preset is kept unless the ATR is below 2 or above 250 rows. Pinning it per symbol (XAUUSD: `InpBucketPoints=400`, identically in the indicator) is still the most robust setting.
 - **With the v1.10 defaults, expectancy is about zero.** The setups showed no robust edge on this quote-tick feed; see `docs\decisions\frequency.md`. At 0.5 % risk and about 7 trades a day:
   - expect drawdowns of 10–17 % within a quarter;
   - the 15 % kill switch has a 6–18 % chance per quarter of firing on noise.

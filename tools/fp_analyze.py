@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 TIME_FORMATS = ("%Y.%m.%d %H:%M:%S", "%Y.%m.%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y.%m.%d", "%Y-%m-%d")
 GRADE_ORDER = {"A": 2, "B": 1, "C": 0}
-SETUP_ORDER = ["SZR", "ABS", "EXH", "DIV"]
+SETUP_ORDER = ["SZR", "ABS", "EXH", "DIV", "SIB"]
 
 TRADE_COLUMNS = ["tradeId", "signalId", "ticket", "setup", "dir", "grade", "mode", "entryTime", "entryPrice", "sl", "tp",
                  "lots", "riskMoney", "exitTime", "exitPrice", "exitReason", "rMultiple", "maeR", "mfeR", "barsHeld",
@@ -601,7 +601,7 @@ def research_replay(cands: list, cfg: dict, funnel: Counter) -> list:
             funnel["f_GRADE"] += 1
         else:
             sel.append((c, ty, pts, grade))
-    rank = {"SZR": 1, "ABS": 2, "EXH": 3, "DIV": 4}
+    rank = {"SZR": 1, "ABS": 2, "EXH": 3, "DIV": 4, "SIB": 5}
     sel.sort(key=lambda x: (x[0].T, -x[3], -x[2], rank[x[1]], -x[0].dir))
     st = {"day": None, "filled": 0, "consec": 0, "pause": None, "block": False, "dayr": 0.0}
     eq = peak = 1.0

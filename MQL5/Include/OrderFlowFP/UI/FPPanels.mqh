@@ -8,6 +8,7 @@
 #define ORDERFLOWFP_UI_FPPANELS_MQH
 
 #include "FPAnalyst.mqh"
+#include "..\FPStatus.mqh"
 
 class CFPPanels
 {
@@ -53,6 +54,32 @@ private:
             col = c.pal.blue;
       c.cv.Txt(c.fBtn, x + w / 2, y + h / 2, text, col, TA_CENTER | TA_VCENTER);
       c.lay.AddButton(id, x, y, w, h, enabled && !c.tester);
+      return w;
+     }
+   //--- FootprintTrader status (FPStatus.mqh heartbeat of the EA with the overlay magic): filled badge,
+   //--- green = live and trading, blue = signals only / virtual, orange = entries blocked now, red = off/stopped.
+   //--- Read-only: the indicator never trades and the EA never reads the indicator.
+   int               DrawEABadge(const int x, const int y, const int h)
+     {
+      CFPContext *c = m_ctx;
+      if(c.set.tradeMagic < 0)
+         return 0;
+      FTStatus st;
+      FTSRead(c.sym, c.set.tradeMagic, st);
+      int sev = FTS_SEV_BAD;
+      string text = FTSDescribe(st, sev);
+      uint bg = c.pal.cdRed;
+      if(sev == FTS_SEV_OK)
+         bg = FPRGB(22, 163, 74);
+      else
+         if(sev == FTS_SEV_INFO)
+            bg = c.pal.blue;
+         else
+            if(sev == FTS_SEV_WARN)
+               bg = c.pal.cdOrange;
+      int w = c.cv.TxtW(c.fBtn, text) + 2 * c.Px(12);
+      c.cv.Box(x, y, w, h, bg);
+      c.cv.Txt(c.fBtn, x + w / 2, y + h / 2, text, FPRGB(255, 255, 255), TA_CENTER | TA_VCENTER);
       return w;
      }
    int               BtnW(const string text, const int minW)
@@ -114,8 +141,9 @@ public:
          x -= gp;
         }
       int rightStart = x - c.Px(10);
-      //--- left toggles
+      //--- left: FootprintTrader status badge, then the toggles
       x = c.Px(8);
+      x += DrawEABadge(x, by, bh) + gp;
       x += Button(x, by, bh, "SUPPLY & DEMAND ZONES", FPB_SD, c.view.sdOn, true, minW) + gp;
       x += Button(x, by, bh, "FUNDAMENTALS", FPB_FUND, false, false, minW) + gp;
       x += Button(x, by, bh, "MINI SESSION CHART", FPB_MINI, c.view.miniOn, true, minW) + gp;

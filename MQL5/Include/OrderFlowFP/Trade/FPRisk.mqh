@@ -504,6 +504,13 @@ public:
    {
       return m_kill || m_dayLossHit || ConsecBlocked();
    }
+   bool         DayLossHit(void) const    { return m_dayLossHit; }
+   bool         DayCapHit(const int pendingCount) const
+   {
+      return (m_cfg.maxTradesPerDay > 0 && m_tradesToday + pendingCount >= m_cfg.maxTradesPerDay);
+   }
+   int          MaxTradesPerDay(void) const { return m_cfg.maxTradesPerDay; }
+   datetime     PauseUntil(void) const    { return PauseActive() ? m_pauseUntil : 0; }
    int          TradesToday(void) const   { return m_tradesToday; }
    double       ClosedToday(void) const   { return m_closedToday; }
    int          ConsecLosses(void) const  { return m_consec; }

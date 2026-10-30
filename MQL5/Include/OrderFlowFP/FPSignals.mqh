@@ -68,6 +68,7 @@ private:
    bool              DivNear(const FPDivBar &w[], const int nw, const int dir, const int maxBack, string &where);
    void              PushBest(FPSignal &best[], bool &have[], const FPSignal &s);
    void              EvalSZR(const datetime T, CFPBar *bar, const datetime &times[], const int nWin, FPSignal &out[]);
+   void              EvalSIB(const datetime T, CFPBar *bar, const datetime &times[], const int nWin, FPSignal &out[]);
    void              EvalSZRPlacebo(const datetime T, CFPBar *bar, const datetime &times[], const int nWin, FPSignal &out[]);
    bool              MakeSZRSignal(const FPZone &z, CFPBar *origin, CFPBar *bar, const datetime T, const bool limit,
                                    const int age, const int touchesBefore, FPSignal &s);
@@ -189,6 +190,9 @@ void CFPSignals::DefaultConfig(FPSignalConfig &c)
    c.valueAreaPct = 0.70;
    c.placeboWickFrac = 0.40;
    c.placeboSzrBodyATR = 0.60;
+   c.sibEnable = false;
+   c.sibLookback = 10;
+   c.sibValidBars = 2;
 }
 
 // fills the spec constants / signals-agent additions that the caller left at 0
@@ -230,6 +234,10 @@ void CFPSignals::Normalize(FPSignalConfig &c)
       c.revValidBars = 1;
    if(c.szrMaxAgeBars < 1)
       c.szrMaxAgeBars = 1;
+   if(c.sibLookback < 1)
+      c.sibLookback = 10;
+   if(c.sibValidBars < 1)
+      c.sibValidBars = 2;
 }
 
 int CFPSignals::GradeFromPoints(const int points)
@@ -1333,6 +1341,138 @@ void CFPSignals::EvalSZR(const datetime T, CFPBar *bar, const datetime &times[],
 }
 
 //+------------------------------------------------------------------+
+//| SIB - stacked-imbalance breakout (v1.11 research setup, default   |
+//| off). Continuation entered on the bar that FORMS the stack, where |
+//| SZR waits for a later retest (about one a month on XAUUSD).       |
+//|  Long at closed bar T:                                            |
+//|  - a BUY zone with originTime == T qualifies (ZoneQualifies, the  |
+//|    SZR thresholds: rows, tier, origin delta%, close above the     |
+//|    zone, height <= szrMaxHeightATR x ATR);                        |
+//|  - T makes a new sibLookback-bar high (a breakout, not a stack    |
+//|    inside a range);                                               |
+//|  - buy-stop at T.high, valid sibValidBars; stop below the zone;   |
+//|    cancelled when the bid falls back below the zone.              |
+//|  Short mirrors. Filters as SZR: HTF agreement and regime >=       |
+//|  szrMinAtrRatio are hard; target = InpTP_R_SZR.                   |
+//|  Placebo: no order-flow stack - an impulse bar (body >=           |
+//|  placeboSzrBodyATR x ATR, close in the outer 30 %) at the same    |
+//|  breakout, stop below its open.                                   |
+//+------------------------------------------------------------------+
+void CFPSignals::EvalSIB(const datetime T, CFPBar *bar, const datetime &times[], const int nWin, FPSignal &out[])
+{
+   int L = m_cfg.sibLookback;
+   if(nWin < L + 1 || bar.rows <= 0 || bar.high <= bar.low)
+      return;
+   bool placebo = m_cfg.placeboPriceOnly;
+   double atrT = m_ctx.atr;
+   if(atrT <= 0.0)
+      return;
+   FPZone zs[];
+   int nz = placebo ? 0 : m_engine.Zones(zs, true);
+   for(int dir = 1; dir >= -1; dir -= 2)
+   {
+      //--- breakout location: T's high (long) / low (short) beyond the previous L held bars
+      double prior[];
+      ArrayResize(prior, L);
+      bool known = true;
+      for(int j = 1; j <= L && known; j++)
+      {
+         CFPBar *b = m_engine.ByTime(times[j]);
+         if(b == NULL || !b.closed || b.state != 0 || b.rows <= 0)
+            known = false;
+         else
+            prior[j - 1] = (dir > 0) ? b.high : b.low;
+      }
+      if(!known)
+         return;                                      // conservative: unknown extremes in the lookback
+      double extreme = (dir > 0) ? bar.high : bar.low;
+      if(!LocationOK(extreme, prior, -dir))           // LocationOK(x, p, -1) = x >= max(p); (x, p, +1) = x <= min(p)
+         continue;
+      //--- the base the stop hides behind: the best qualifying zone of T (real) or the impulse bar's open (placebo)
+      double zLow = 0.0, zHigh = 0.0;
+      int    rows = 0;
+      bool   t3 = false;
+      if(placebo)
+      {
+         double body = (bar.close - bar.open) * dir;
+         if(body < m_cfg.placeboSzrBodyATR * atrT || CloseFrac(bar, dir) < 0.70)
+            continue;
+         zLow = MathMin(bar.open, bar.close);
+         zHigh = MathMax(bar.open, bar.close);
+      }
+      else
+      {
+         int best = -1;
+         for(int i = 0; i < nz; i++)
+         {
+            if(zs[i].dir != dir || zs[i].originTime != T)
+               continue;
+            if(!ZoneQualifies(zs[i], bar, atrT, m_cfg))
+               continue;
+            //--- prefer the zone nearest the breakout (smallest risk), then the taller stack
+            if(best < 0 || (dir > 0 ? zs[i].priceLow > zs[best].priceLow : zs[i].priceHigh < zs[best].priceHigh) ||
+               ((dir > 0 ? zs[i].priceLow == zs[best].priceLow : zs[i].priceHigh == zs[best].priceHigh) && zs[i].rowsCount > zs[best].rowsCount))
+               best = i;
+         }
+         if(best < 0)
+            continue;
+         zLow = zs[best].priceLow;
+         zHigh = zs[best].priceHigh;
+         rows = zs[best].rowsCount;
+         t3 = StackHasTier(zs[best], bar, 3);
+      }
+      double buf = StopBuffer();
+      double off = (double)m_cfg.revEntryOffsetPts * m_point;
+      FPSignal s;
+      s.Reset();
+      s.type = FP_SIG_STACK_BREAKOUT;
+      s.dir = dir;
+      s.barTime = T;
+      s.orderKind = FP_ORD_STOP;
+      s.entryPrice = Px((dir > 0) ? bar.high + off : bar.low - off);
+      s.stopPrice = Px((dir > 0) ? zLow - buf : zHigh + buf);
+      s.validBars = m_cfg.sibValidBars;
+      s.invalidPrice = (dir > 0) ? zLow : zHigh;      // the breakout failed back through its base
+      s.refLow = zLow;
+      s.refHigh = zHigh;
+      s.atr = atrT;
+      s.closeFrac = CloseFrac(bar, dir);
+      s.stackRows = rows;
+      s.zoneOrigin = placebo ? (datetime)0 : T;
+      double tgt = (dir > 0) ? m_ctx.prevDayHigh : m_ctx.prevDayLow;
+      if(tgt > 0.0 && ((dir > 0 && tgt > s.entryPrice) || (dir < 0 && tgt < s.entryPrice)))
+         s.tpStructure = tgt;
+      //--- grading: hard requirements never score. HTF agreement is a hard filter (FPFilters), so not a point.
+      double dp = (bar.volume > 0.0) ? bar.delta / bar.volume : 0.0;
+      bool strongDelta = !placebo && ((dir > 0) ? dp >= 2.0 * m_cfg.szrMinDeltaPct : dp <= -2.0 * m_cfg.szrMinDeltaPct);
+      double lv[4];
+      lv[0] = (dir > 0) ? m_ctx.sessVAH : m_ctx.sessVAL;
+      lv[1] = (dir > 0) ? m_ctx.prevDayHigh : m_ctx.prevDayLow;
+      lv[2] = m_ctx.prevSessPOC;
+      lv[3] = m_ctx.sessPOC;
+      //--- "loc": the bar broke through a key level (the level lies inside the bar's range, within tolerance)
+      bool loc = NearAnyLevel(bar.low, bar.high, lv, m_cfg.levelTolATR * atrT);
+      bool trend = (m_ctx.regime == FP_REG_TREND);
+      bool cvd = !placebo && bar.cvdValid && bar.cumDelta * dir > 0.0;
+      int pts = 0;
+      string items = "";
+      if(t3)          { pts++; items += "t3+"; }
+      if(loc)         { pts++; items += "loc+"; }
+      if(trend)       { pts++; items += "trend+"; }
+      if(strongDelta) { pts++; items += "dp+"; }
+      if(cvd)         { pts++; items += "cvd+"; }
+      if(StringLen(items) > 0)
+         items = StringSubstr(items, 0, StringLen(items) - 1);
+      s.points = pts;
+      s.grade = placebo ? (int)MathMax(FP_GRADE_C, MathMin(FP_GRADE_A, m_cfg.minGrade)) : GradeFromPoints(pts);
+      s.info = (placebo ? "placebo=1;" : "") + "lookback=" + IntegerToString(L) + ";rows=" + IntegerToString(rows) +
+               ";zone=" + FPSigD(zLow, m_digits) + "-" + FPSigD(zHigh, m_digits) + ";dp=" + FPSigD(dp) +
+               ";cf=" + FPSigD(s.closeFrac) + ";regime=" + FPSigRegimeName(m_ctx.regime) + ";pts=" + items;
+      Append(out, s);
+   }
+}
+
+//+------------------------------------------------------------------+
 //| SZR (placebo): price zones at the base of impulse bars; lifecycle |
 //| (fill / touches) rebuilt as of T from the bars between origin and |
 //| T with the engine's rules (BUY: filled low < priceLow, touched    |
@@ -1587,7 +1727,7 @@ int CFPSignals::Evaluate(const datetime closedBarTime, FPSignal &out[])
    CFPBar *bar = m_engine.ByTime(T);
    if(bar == NULL || !bar.closed)
       return 0;
-   int need = 1 + MathMax(MathMax(m_cfg.szrMaxAgeBars, m_cfg.revLookback),
+   int need = 1 + MathMax(MathMax(MathMax(m_cfg.szrMaxAgeBars, m_cfg.revLookback), m_cfg.sibLookback),
                           m_cfg.divMaxBars + 2 * m_cfg.divPivot + 1 + FP_DIV_CONF_BARS);
    datetime times[];
    int nWin = CollectBack(T, need, times);
@@ -1599,6 +1739,8 @@ int CFPSignals::Evaluate(const datetime closedBarTime, FPSignal &out[])
       nw = BuildDivWindow(times, nWin, w);
    if(m_cfg.szrEnable)
       EvalSZR(T, bar, times, nWin, out);
+   if(m_cfg.sibEnable)
+      EvalSIB(T, bar, times, nWin, out);
    if(m_cfg.revEnable)
    {
       EvalRev(T, bar, 1, times, nWin, w, nw, out);

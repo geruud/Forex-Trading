@@ -15,14 +15,21 @@
 //| v1.10: input defaults retuned for ~5-6 trades/day on XAUUSD M5     |
 //| (docs\decisions\frequency.md, docs\TRADE_LOGIC.md). The original   |
 //| spec defaults: MQL5\Presets\FootprintTrader_spec.set.              |
+//|                                                                    |
+//| v1.11: tick feed held while disconnected / just reconnected (no    |
+//| more minute-long OnTick blocks), EA status heartbeat for the chart |
+//| badge (FPStatus.mqh), stable auto row size. Defaults: min 2 grade  |
+//| points, 0.25 % risk, 10 % kill switch. New research setup SIB      |
+//| (stacked-imbalance breakout), off by default.                      |
 //+------------------------------------------------------------------+
 #property copyright   "FootprintTrader"
-#property version     "1.10"
+#property version     "1.11"
 #property description "Closed-bar order-flow footprint setups (SZR / ABS / EXH / DIV)."
 #property description "Start with SIGNALS_ONLY, then VIRTUAL, then LIVE on a demo account."
 #property description "Tester: only 'Every tick based on real ticks' is meaningful."
 
 #include <OrderFlowFP\Trade\FPJournal.mqh>
+#include <OrderFlowFP\FPStatus.mqh>
 
 //+------------------------------------------------------------------+
 //| Inputs (03 §10). Comment = label; [..] = optimisation range.      |
@@ -36,6 +43,7 @@ input bool                   InpDumpBars          = false;       // Dump closed 
 input bool                   InpAttachIndicator   = false;       // Attach OrderFlowFP\FootprintChart (visuals only) [fixed]
 input int                    InpMaxSignalLagSec   = 10;          // Max signal lag after the bar close, s [fixed 10]
 input int                    InpMaxLatePendingSec = 180;         // Late bar (feed stall) still placed as a pending order if untriggered, up to s (0 = off; spec 0) [fixed]
+input bool                   InpShowStatus        = true;        // Show the EA status (LIVE / PAUSED / OFF ...) on the chart [fixed]
 
 input group "Research"
 input bool                   InpPlaceboPriceOnly  = false;       // Placebo: price-only setups, no order flow [false/true per study]
@@ -65,6 +73,11 @@ input double                 InpSZRMaxHeightATR   = 0.6;         // SZR max zone
 input int                    InpSZRMaxAgeBars     = 30;          // SZR max zone age, bars [10..60 step 10]
 input int                    InpSZRMaxTouches     = 1;           // SZR max touches before the retest [fixed 1]
 
+input group "SIB (v1.11 research setup - test in VIRTUAL before LIVE)"
+input bool                   InpSIBEnable         = false;       // SIB: breakout of a fresh stacked-imbalance zone (continuation) [false/true per study]
+input int                    InpSIBLookback       = 10;          // SIB: the bar must make a new high/low of this many bars [5..30 step 5]
+input int                    InpSIBValidBars      = 2;           // SIB: stop-entry validity, bars [1..4 step 1]
+
 input group "ABS/EXH"
 input bool                   InpRevEnable         = true;        // ABS/EXH: enable reversal setups [fixed]
 input int                    InpRevLookback       = 20;          // Extreme lookback, bars [10..40 step 5]
@@ -85,7 +98,7 @@ input bool                   InpDIVStandalone     = false;       // Trade DIV st
 
 input group "Grade"
 input ENUM_FP_GRADE          InpMinGrade          = FP_GRADE_C;  // Minimum grade to trade [C, B or A] (spec B)
-input int                    InpMinPoints         = 1;           // Minimum grade points to trade (0..5; grade C = 0-2 points; spec 0) [0..3 step 1]
+input int                    InpMinPoints         = 2;           // Minimum grade points to trade (0..5; grade C = 0-2 points; v1.10 1, spec 0) [0..3 step 1]
 
 input group "Filters"
 input int                    InpMinTicksPerBar    = 60;          // Min ticks per bar (M1 20, M5 60, M15 150) [fixed per TF]
@@ -104,13 +117,13 @@ input int                    InpNewsMin           = 15;          // News blackou
 input int                    InpMaxPositions      = 1;           // Max positions + pending entries of this magic [fixed 1]
 
 input group "Risk"
-input double                 InpRiskPct           = 0.5;         // Risk per trade, % of equity [0.1..1.0 step 0.1]
+input double                 InpRiskPct           = 0.25;        // Risk per trade, % of equity (v1.10 and spec 0.5) [0.1..1.0 step 0.1]
 input bool                   InpAllowMinLot       = false;       // Trade the minimum lot if the size is below it [fixed false]
 input int                    InpMaxTradesPerDay   = 10;          // Max entries per server day (0 = off; spec 4) [fixed]
 input double                 InpMaxDailyLossPct   = 2.0;         // Max daily loss, % of day-start equity (0 = off) [fixed 2]
 input int                    InpMaxConsecLosses   = 3;           // Consecutive losses -> pause (0 = off) [fixed 3]
 input int                    InpConsecPauseMin    = 60;          // Pause after the consecutive losses, minutes (0 = until the next server day = spec) [0..240 step 30]
-input double                 InpMaxDDPct          = 15;          // Kill switch: equity DD from peak, % (0 = off; spec 10) [fixed]
+input double                 InpMaxDDPct          = 10;          // Kill switch: equity DD from peak, % (0 = off; v1.10 15, spec 10) [fixed]
 
 input group "Exits"
 input double                 InpSLBufferATR       = 0.10;        // Stop buffer x ATR [0.05..0.3 step 0.05]
@@ -164,6 +177,8 @@ double   g_lastAtr      = 0.0;
 int      g_indHandle    = INVALID_HANDLE;
 int      g_updateErrors = 0;
 int      g_updateFailStreak = 0;
+ulong    g_lastBlockMs  = 0;            // GetTickCount64() when Update() last blocked >= 5 s (0 = never)
+long     g_statusSec    = 0;            // TimeLocal() second of the last status publish
 //--- OnTick timing (03 §14: <= 5 ms average outside bar closes)
 ulong    g_perfN        = 0;
 ulong    g_perfSumUs    = 0;
@@ -490,6 +505,118 @@ void ProcessClosedBar(const datetime T, const MqlTick &tk)
       g_virt.OnBarClosed(T, lo, hi, longA, shortA, tk, g_lastAtr);
 }
 
+//+------------------------------------------------------------------+
+//| Status heartbeat (FPStatus.mqh). The FootprintChart header shows   |
+//| it as a coloured badge; without the indicator the EA draws its own  |
+//| label. Published once a second and whenever a bar was processed.    |
+//+------------------------------------------------------------------+
+#define FT_STATUS_OBJ "FT_STATUS"
+
+bool FootprintOnChart()
+{
+   int n = ChartIndicatorsTotal(0, 0);
+   for(int i = 0; i < n; i++)
+      if(ChartIndicatorName(0, 0, i) == "OrderFlowFP Footprint")
+         return true;
+   return false;
+}
+
+void BuildStatus(FTStatus &s)
+{
+   ZeroMemory(s);
+   s.present = true;
+   s.mode    = (int)InpTradeMode;
+   int pend  = 0;
+   if(InpTradeMode == FP_MODE_LIVE)
+   {
+      s.open = g_exec.OpenCount() + g_exec.PendingCount();
+      pend   = g_exec.PendingCount();
+      if(TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) == 0 || MQLInfoInteger(MQL_TRADE_ALLOWED) == 0 ||
+         AccountInfoInteger(ACCOUNT_TRADE_EXPERT) == 0 || AccountInfoInteger(ACCOUNT_TRADE_ALLOWED) == 0)
+         s.flags |= FTS_ALGO_OFF;
+   }
+   else if(InpTradeMode == FP_MODE_VIRTUAL)
+   {
+      s.open = g_virt.OpenCount() + g_virt.PendingCount();
+      pend   = g_virt.PendingCount();
+   }
+   if(!g_tester && TerminalInfoInteger(TERMINAL_CONNECTED) == 0)
+      s.flags |= FTS_DISCONNECTED;
+   if(!g_engine.HistoryReady() || !g_signals.IndicatorsReady())
+      s.flags |= FTS_LOADING;
+   if(g_warmupLeft > 0)
+      s.flags |= FTS_WARMUP;
+   if(g_halted)
+      s.flags |= FTS_HALTED;
+   if(g_engine.FeedHeld() || g_updateFailStreak > 0 || (g_lastBlockMs > 0 && GetTickCount64() - g_lastBlockMs < 60000))
+      s.flags |= FTS_FEED_STALL;
+   if(InpTradeMode != FP_MODE_SIGNALS_ONLY)
+   {
+      if(g_risk.KillActive())
+         s.flags |= FTS_KILL;
+      if(g_risk.DayLossHit())
+         s.flags |= FTS_DAY_LOSS;
+      if(g_risk.ConsecBlocked())
+         s.flags |= FTS_PAUSE;
+      if(g_risk.DayCapHit(0))
+         s.flags |= FTS_DAY_CAP;
+      s.tradesToday = g_risk.TradesToday();
+      s.maxTrades   = g_risk.MaxTradesPerDay();
+      s.pauseUntil  = g_risk.PauseUntil();
+   }
+}
+
+void DrawStatusLabel(const string text, const int severity)
+{
+   if(g_tester && MQLInfoInteger(MQL_VISUAL_MODE) == 0)
+      return;
+   if(!InpShowStatus || FootprintOnChart())
+   {
+      ObjectDelete(0, FT_STATUS_OBJ);     // the indicator header shows the badge
+      return;
+   }
+   color col = clrLimeGreen;
+   if(severity == FTS_SEV_INFO)
+      col = clrDodgerBlue;
+   else if(severity == FTS_SEV_WARN)
+      col = clrOrange;
+   else if(severity == FTS_SEV_BAD)
+      col = clrRed;
+   if(ObjectFind(0, FT_STATUS_OBJ) < 0)
+   {
+      ObjectCreate(0, FT_STATUS_OBJ, OBJ_LABEL, 0, 0, 0);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_CORNER, CORNER_LEFT_LOWER);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_ANCHOR, ANCHOR_LEFT_LOWER);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_XDISTANCE, 10);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_YDISTANCE, 10);
+      ObjectSetString(0, FT_STATUS_OBJ, OBJPROP_FONT, "Arial Bold");
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_FONTSIZE, 11);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_HIDDEN, true);
+      ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_BACK, false);
+   }
+   ObjectSetString(0, FT_STATUS_OBJ, OBJPROP_TEXT, "FootprintTrader: " + text);
+   ObjectSetInteger(0, FT_STATUS_OBJ, OBJPROP_COLOR, col);
+   ChartRedraw(0);
+}
+
+void PublishStatus(const bool force)
+{
+   if(!g_inited || MQLInfoInteger(MQL_OPTIMIZATION) != 0)
+      return;
+   long sec = (long)TimeLocal();
+   if(!force && sec == g_statusSec)
+      return;
+   g_statusSec = sec;
+   FTStatus s;
+   BuildStatus(s);
+   FTSWrite(_Symbol, InpMagic, s);
+   s.heartbeat = (datetime)sec;
+   int sev = FTS_SEV_BAD;
+   string text = FTSDescribe(s, sev);
+   DrawStatusLabel(text, sev);
+}
+
 void AttachIndicator()
 {
    if(!InpAttachIndicator)
@@ -545,6 +672,7 @@ int OnInit()
    if(InpConsecPauseMin < 0 || InpConsecPauseMin > 1440) FTAddReason(bad, "0<=InpConsecPauseMin<=1440");
    if(InpMinPoints < 0 || InpMinPoints > 5)              FTAddReason(bad, "0<=InpMinPoints<=5");
    if(InpMaxLatePendingSec < 0)                          FTAddReason(bad, "InpMaxLatePendingSec>=0");
+   if(InpSIBLookback < 1 || InpSIBValidBars < 1)         FTAddReason(bad, "InpSIBLookback>=1,InpSIBValidBars>=1");
    if(bad != "")
    {
       Print("FT INIT: invalid inputs: ", bad);
@@ -619,6 +747,9 @@ int OnInit()
    sc.valueAreaPct      = ec.valueAreaPct;   // signals-agent addition: must equal the engine's value area
    sc.placeboWickFrac   = 0.40;              // signals-agent addition (placebo ABS), its documented default
    sc.placeboSzrBodyATR = 0.60;              // signals-agent addition (placebo SZR), its documented default
+   sc.sibEnable         = InpSIBEnable;
+   sc.sibLookback       = InpSIBLookback;
+   sc.sibValidBars      = InpSIBValidBars;
    if(!g_signals.Init(GetPointer(g_engine), sc))
    {
       Print("FT INIT: signals Init failed");
@@ -742,6 +873,7 @@ int OnInit()
       EventSetTimer(1);
    AttachIndicator();
    g_inited = true;
+   PublishStatus(true);
    Print(StringFormat("FT INIT: FootprintTrader %s on %s %s, magic %I64d, risk %.2f%%, warm-up %d bars, history loading %s",
                       FTModeName((int)InpTradeMode), _Symbol, FPTfName((ENUM_TIMEFRAMES)_Period), InpMagic, InpRiskPct,
                       InpWarmupBars, g_tester ? "from OnTick" : "from OnTimer"));
@@ -751,6 +883,9 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    EventKillTimer();
+   if(MQLInfoInteger(MQL_OPTIMIZATION) == 0)
+      FTSClear(_Symbol, InpMagic);
+   ObjectDelete(0, FT_STATUS_OBJ);
    if(g_perfN > 0)
       Print(StringFormat("FT PERF: OnTick avg %.3f ms over %I64u ticks without bar close (max %.3f ms); %I64u bar-close ticks avg %.3f ms",
                          (double)g_perfSumUs / (double)g_perfN / 1000.0, g_perfN, (double)g_perfMaxUs / 1000.0, g_perfBarN,
@@ -785,6 +920,7 @@ void OnTimer()
       g_engine.LoadStep(250);
    CheckReady();
    g_filters.OnTimer();
+   PublishStatus(false);
 }
 
 void OnTick()
@@ -795,13 +931,18 @@ void OnTick()
    if(g_tester && !g_engine.HistoryReady())
       g_engine.LoadStep(2000);
    //--- engine.Update() calls CopyTicks, which can block while the terminal re-synchronises its tick history
-   //--- (seen live: 135 s during a burst of reconnects). Bars that close meanwhile are processed late.
+   //--- (seen live: 135 s during a burst of reconnects). Since v1.11 the engine holds the fetch while the
+   //--- terminal is disconnected and for a few seconds after it reconnects (CFPEngine::FetchAllowed); a block
+   //--- that still happens is logged below, and bars that close meanwhile are processed late.
    ulong u0 = GetMicrosecondCount();
    int   upd = g_engine.Update();
    ulong uMs = (GetMicrosecondCount() - u0) / 1000;
    if(uMs >= 5000)
+   {
+      g_lastBlockMs = GetTickCount64();
       Print(StringFormat("FT ENGINE: Update() blocked %.1f s (CopyTicks waiting for the tick history, e.g. after a reconnect) - "
                          "bars closed meanwhile are processed late (InpMaxLatePendingSec=%d)", (double)uMs / 1000.0, InpMaxLatePendingSec));
+   }
    if(upd < 0)
    {
       if(g_updateFailStreak++ == 0 || g_updateErrors < 10)
@@ -846,6 +987,7 @@ void OnTick()
    if(InpTradeMode == FP_MODE_VIRTUAL)
       g_virt.OnTick(tk, g_lastAtr);
    DrainRecords();
+   PublishStatus(barWork);
    //--- timing (only once the history is ready)
    if(g_readySeen)
    {
