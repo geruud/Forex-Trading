@@ -1,0 +1,136 @@
+﻿CH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	FPSignalTests: start
+QN	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.true
+MG	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.metrics(share=0.708,conc=2.0,cf=0.75,volx=1.2)
+FM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.volumeBelowSMA
+KR	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.volumeSMAUnknown
+CJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.short.false.mirrorOfLongBar
+DP	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.closeFrac(0.375)
+MK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.sellShare(0.5)
+GD	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.concentration(1.33)
+PO	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.shape(rows=6)
+QE	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.short.true
+EM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ABS.long.false.mirrorOfShortBar
+PO	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.long.true
+NH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.short.false.mirrorOfLongBar
+EO	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.long.false.closeFrac(0.375)
+EE	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.long.false.extremeRowTooBig(4.8%)
+ER	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.long.false.sellNotIncreasing
+IN	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.long.false.shape(rows=6)
+LK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.short.true
+MM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS EXH.short.false.closeFrac(0.25)
+GI	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS REV.both.true
+CO	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS REV.both.typeIsABS
+RJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS REV.exhOnly.typeIsEXH
+PR	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS REV.none
+JK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.long.true(newLow)
+JE	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.long.true(equalLow)
+LQ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.long.false
+KH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.short.true
+HN	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.short.false
+QE	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LOC.false.noPriorBars
+GS	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS GRADE.5=A
+PJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS GRADE.4=A
+DR	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS GRADE.3=B
+LI	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS GRADE.2=C
+FQ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS GRADE.0=C
+IF	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LEVEL.near.true
+LP	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LEVEL.near.false
+DJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS LEVEL.near.below.true
+QM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS IMB.long.false(tier3 outside bottom rows)
+KH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS IMB.long.true(sell tier2 in bottom rows)
+IJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS IMB.short.true(buy tier2 in top rows)
+HP	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS IMB.short.false(tier1)
+EH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.true
+EN	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.height(3 > 0.6*4)
+ED	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.atrUnknown
+EK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.stackTier3.false
+RQ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.rows(2)
+EG	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.false.stackOutsideBar(index)
+RS	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.false.originMismatch
+FD	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.closeNotBeyond(104 < 105)
+GI	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.tier(index-based)
+LP	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.true.tier3
+JF	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.buy.false.deltaPct(0.08)
+EM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.sell.true
+LH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ZONE.sell.false.closeNotBeyond
+EK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.open.unfilled
+RP	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.open.filledAfterT
+MF	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.closed.filledAtT
+IQ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.closed.filledBeforeT
+JK	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.ignored.originAfterT
+OM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.touchesBefore.excludesT
+QM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.touchesBefore.earlierTouch
+FJ	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS ASOF.touchesBefore.unknownAfterT
+PR	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.true
+LH	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.false.closeBelowMid
+LE	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.false.deltaNegative
+PM	0	20:16:37.016	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.placebo.true(close>=open)
+MG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.placebo.false(close<open)
+DK	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.false.notEntered
+JR	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS RETEST.buy.false.filled
+CH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS RETEST.sell.true
+JN	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.cvd.sameSession.true
+QI	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.stampedAtConfirmingBar(p2+pivot == last)
+FJ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.invisibleBeforeConfirmation
+NM	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.series.noBullish
+FJ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.false.maxBars(5)
+HI	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.false.cvdInvalid(barDeltaOnly)
+NS	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.false.otherSession(barDeltaOnly)
+DF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.true.otherSession.negativeDelta
+IF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.false.badBarInPivotWindow
+KR	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bear.false.lowerHigh
+OK	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bull.cvd.sameSession.true
+CH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bull.invisibleBeforeConfirmation
+OS	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bull.false.otherSession(barDeltaOnly)
+QF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS DIV.bull.true.otherSession.positiveDelta
+JJ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.abs.true
+NQ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.abs.false.range
+IG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.abs.false.wick(0.25)
+MM	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.exh.true
+RD	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.exh.false.bearishBody
+JM	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.zone.buy.true
+OP	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.zone.false.body(5 < 6)
+DF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PLACEBO.zone.sell.true
+HN	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.inside
+MD	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.endExclusive
+KP	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.beforeStart
+RQ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.wrap.late
+GG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.wrap.early
+KM	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.wrap.outside
+LH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.equal=wholeDay
+CS	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.off
+RH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.window.malformed=closed
+DG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.friday.afterCutoff
+GR	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.friday.beforeCutoff
+EF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.friday.thursday
+NP	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.friday.off
+KK	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.spread.atrEdge
+LP	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.spread.atrFail
+LH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.spread.ptsFail
+EH	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.spread.ptsOffWhenZero
+DR	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS FILTER.spread.atrUnknown
+OE	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.onTime
+EO	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.onTime.edge10
+IF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.late.specOff
+PO	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.late.pendingOnly
+MK	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.late.edge180
+DQ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.late.beyond
+QG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.breakBar.alwaysStale
+HE	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS STALE.lateTolBelowLag.off
+MN	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: risk 0.50%/trade, minLot skip, max 0 trades/day, daily loss 0.00%, 3 consecutive losses (pause 60 min), kill at 0.00% DD (peak 10000.00)
+EE	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: server day 2025.01.07, day-start equity 10000.00
+KG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.twoLosses.noBlock
+DL	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: 3 consecutive losses (limit 3) - paused for 60 min, until 2025.01.07 03:01
+QN	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.third.loss.fires
+NE	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.counterRestarts
+QR	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.blocked.at59min
+KF	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.free.at60min
+PL	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS PAUSE.winResetsStreak
+PD	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: risk 0.50%/trade, minLot skip, max 0 trades/day, daily loss 0.00%, 3 consecutive losses (pause to the next day), kill at 0.00% DD (peak 10000.00)
+IG	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: server day 2025.01.07, day-start equity 10000.00
+IS	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: 3 consecutive losses (limit 3) - paused until the next server day
+ER	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS SPEC.consec.fires
+FJ	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS SPEC.consec.stillBlocked.lateSameDay
+PD	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FT RISK[TEST]: server day 2025.01.08, day-start equity 10000.00
+KS	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	PASS SPEC.consec.nextDay.free
+DN	0	20:16:37.017	FPSignalTests (XAUUSD,M5)	FPSignalTests: 127 passed, 0 failed, 127 total -> ALL PASS

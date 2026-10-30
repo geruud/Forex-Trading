@@ -1,0 +1,25 @@
+﻿PJ	0	20:10:23.192	FootprintChart (XAUUSD,M5)	OrderFlowFP: init XAUUSD M5 | bucket=400 pts (0.400) [preset XAUUSD] | history=300 | session start 0 min | indicator(per-bar, non-blocking)
+KS	0	20:10:23.208	FootprintChart (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (sample 5000, trades 0%) - QUOTE mode: volumes are tick counts = relative activity
+CM	0	20:10:23.213	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: started on XAUUSD M5 | scale 1.01 (DPI 144) | trades overlay magic 240611
+CP	0	20:10:37.609	FootprintChart (XAUUSD,M5)	OrderFlowFP: history ready XAUUSD M5: 446 closed bars (ok 446, nodata 0 = 0.0%), zones 22, source=QUOTE_TICKS, 14421 ms
+CE	0	20:10:37.609	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: history ready after 14.4 s | 224 timer steps while loading: avg 46.8 ms, max 186.9 ms (load budget 40 ms) | worst step: engine LoadStep 180.2, closed bars 0.0, periodic 6.6 (market 0.0, studies 0.0, meter+book 0.0, analyst 0.0, trades 6.5), buffers+draw 0.1 ms
+MP	0	20:10:38.916	FPShot (XAUUSD,M5)	FPShot: fp_shot_dark_green: ready after 15 s: ready=1 frames=61 avgms=3.50 lastms=6.00 loaded=446/446
+QR	0	20:10:45.464	FPShot (XAUUSD,M5)	FPShot: fp_shot_dark_green: saved OrderFlowFP\fp_shot_dark_green.png 1857x978 | ready=1 frames=88 avgms=3.95 lastms=3.40 loaded=446/446
+HI	0	20:10:45.838	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: stopped (reason 4) after 94 frames
+PM	0	20:10:46.135	FootprintChart (XAUUSD,M5)	OrderFlowFP: init XAUUSD M5 | bucket=400 pts (0.400) [preset XAUUSD] | history=300 | session start 0 min | indicator(per-bar, non-blocking)
+CF	0	20:10:46.135	FootprintChart (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (sample 5000, trades 0%) - QUOTE mode: volumes are tick counts = relative activity
+MP	0	20:10:46.139	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: started on XAUUSD M5 | scale 1.01 (DPI 144) | trades overlay magic 240611
+JO	0	20:11:00.339	FootprintChart (XAUUSD,M5)	OrderFlowFP: history ready XAUUSD M5: 446 closed bars (ok 446, nodata 0 = 0.0%), zones 22, source=QUOTE_TICKS, 14203 ms
+NP	0	20:11:00.339	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: history ready after 14.2 s | 226 timer steps while loading: avg 46.1 ms, max 69.3 ms (load budget 40 ms) | worst step: engine LoadStep 65.1, closed bars 0.0, periodic 0.0 (market 0.0, studies 0.0, meter+book 0.0, analyst 0.0, trades 0.0), buffers+draw 4.2 ms
+ID	0	20:11:01.488	FPShot (XAUUSD,M5)	FPShot: fp_shot_noside_light: ready after 14 s: ready=1 frames=59 avgms=3.20 lastms=2.49 loaded=446/446
+RO	0	20:11:08.048	FPShot (XAUUSD,M5)	FPShot: fp_shot_noside_light: saved OrderFlowFP\fp_shot_noside_light.png 1857x978 | ready=1 frames=89 avgms=3.50 lastms=3.45 loaded=446/446
+EL	0	20:11:08.444	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: stopped (reason 4) after 92 frames
+RP	0	20:11:08.756	FootprintChart (XAUUSD,M5)	OrderFlowFP: init XAUUSD M5 | bucket=400 pts (0.400) [preset XAUUSD] | history=300 | session start 0 min | indicator(per-bar, non-blocking)
+EH	0	20:11:08.756	FootprintChart (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (sample 5000, trades 0%) - QUOTE mode: volumes are tick counts = relative activity
+JF	0	20:11:08.766	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: started on XAUUSD M5 | scale 1.50 (DPI 144) | trades overlay magic 240611
+LM	0	20:11:25.490	FootprintChart (XAUUSD,M5)	OrderFlowFP: history ready XAUUSD M5: 446 closed bars (ok 446, nodata 0 = 0.0%), zones 22, source=QUOTE_TICKS, 16734 ms
+MP	0	20:11:25.490	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: history ready after 16.7 s | 266 timer steps while loading: avg 47.9 ms, max 85.9 ms (load budget 40 ms) | worst step: engine LoadStep 75.4, closed bars 0.0, periodic 0.0 (market 0.0, studies 0.0, meter+book 0.0, analyst 0.0, trades 0.0), buffers+draw 10.5 ms
+EH	0	20:11:26.629	FPShot (XAUUSD,M5)	FPShot: fp_shot_default_big: ready after 17 s: ready=1 frames=67 avgms=7.15 lastms=6.71 loaded=446/446
+MK	0	20:11:33.230	FPShot (XAUUSD,M5)	FPShot: fp_shot_default_big: saved OrderFlowFP\fp_shot_default_big.png 2487x1408 | ready=1 frames=96 avgms=7.87 lastms=9.91 loaded=446/446
+PP	0	20:11:33.230	FPShot (XAUUSD,M5)	FPShot: done (3 variants)
+KG	0	20:11:33.335	FootprintChart (XAUUSD,M5)	OrderFlowFP UI: stopped (reason 9) after 98 frames

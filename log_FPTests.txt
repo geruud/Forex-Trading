@@ -1,0 +1,141 @@
+﻿EK	0	20:16:43.665	FPTests (XAUUSD,M5)	FPTests: start (chart XAUUSD, point 0.0010000000; all ticks are injected, no tick base access)
+GH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.01 QUOTE unseeded first tick -> split 50/50, size 1, price=bid
+QI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.02 QUOTE mid up -> BUY
+GQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.03 QUOTE mid flat -> previous side (BUY)
+RQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.04 QUOTE mid down -> SELL
+KI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.05 QUOTE tick without BID/ASK flag is not counted
+CM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.06 QUOTE ask-only change: counted at bid, mid rule (1001->1002) -> BUY
+PR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.07 QUOTE flat mid while side still unknown -> split
+CE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.08 QUOTE MID basis: row price = mid
+LI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.09 TRADE quote tick is not counted
+JR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.10 TRADE quote rule uses the PREVIOUS tick's ask (last 1002 >= prev ask 1002 -> BUY; own bid is 1002)
+RR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.11 TRADE inside spread -> tick rule up -> BUY; size = volume_real
+MS	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.12 TRADE inside spread, flat price -> previous side (BUY)
+QQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.13 TRADE last <= previous bid -> SELL
+CE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.14 TRADE inside spread, up-tick -> BUY
+GS	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.15 TRADE inside spread, down-tick -> SELL
+HR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.16 TRADE unseeded (no quote, no previous trade) -> split
+EH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.17 TRADE inside spread with no previous trade -> split
+CE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.18 EXCHANGE quote tick is not counted
+LQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.19 EXCHANGE BUY flag wins over the quote rule
+FP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.20 EXCHANGE SELL flag wins over the quote rule
+MF	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.21 EXCHANGE both flags -> quote rule (last >= prev ask) -> BUY
+RH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.22 EXCHANGE no side flag, inside spread -> tick rule down -> SELL
+CD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.23 EXCHANGE no side flag, flat price -> previous side (SELL)
+IO	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.24 a BID tick with stale volume/last is NOT a trade tick
+RR	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+OQ	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=EXCHANGE_FLAGS (sample 10, trades 30%)
+CM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.25.1 AUTO: 30% flagged trades -> EXCHANGE_FLAGS
+JG	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+IQ	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=TRADE_TICKS (sample 10, trades 50%)
+MD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.25.2 AUTO: 50% unflagged trades with last>0 -> TRADE_TICKS
+RD	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+HO	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (sample 10, trades 0%) - QUOTE mode: volumes are tick counts = relative activity
+IM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.25.3 AUTO: quote ticks with stale volume -> QUOTE_TICKS
+FQ	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+KP	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (sample 10, trades 10%) - QUOTE mode: volumes are tick counts = relative activity
+LD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 1.25.4 AUTO: 10% trades (<20%) -> QUOTE_TICKS
+IL	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.01 floorDiv positive numerators
+EE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.02 floorDiv negative numerators (floor, not truncation)
+LI	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=5 pts (0.005) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+EG	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+FI	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=40 pts (0.040) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+ID	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+RL	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=1 pts (0.001) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+KE	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+IQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.03 engines init (bucket 5/40/1)
+PO	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.04 RowSize = bucket x point
+II	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.05 PriceToRow bucket 5, positive prices
+DL	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.06 PriceToRow bucket 5, negative prices
+HE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.07 RowToPrice = bottom edge (bucket 5)
+LI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.08 PriceToRow(RowToPrice(r)) == r for +/- rows (bucket 5 and 40)
+DN	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.09 PriceToRow/RowToPrice bucket 40
+FS	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.10 PriceToRow bucket 1 (rounds to the nearest point first)
+MH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.11 preset XAUUSD.m -> step 0.40
+OI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.12 preset #US30.cash -> US30
+DM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.13 preset EURUSD-ECN -> 0.00005
+QD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.14 preset @GCE -> 5 ticks
+IP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.15 preset ESZ4 -> ES (1 tick)
+HK	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.16 ESP35 is not the ES future
+MP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 2.17 niceRound
+KG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.01 buy 96 vs sell 18 below -> BUY tier 3 (5.3x)
+JI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.02 buy 75 vs sell 20 below -> BUY tier 2 (3.75x)
+NR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.03 sell 463 vs buy 237 above -> none (1.95x)
+DN	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.04 buy 7 vs sell 3 below -> none (min volume 10)
+HD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.05 opposite side 0 -> tier 3
+OS	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.06 ratios are inclusive: 2.0x->1, 3.0x->2, 4.0x->3
+EQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.07 SELL: sell 40 vs buy 10 above -> SELL tier 3
+QE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.08 edge rows: no BUY at the bottom row, no SELL at the top row
+LF	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.09 POC tie -> row closest to the close
+JR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 3.10 POC tie at equal distance -> lower row
+FR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.01 BUY stack rows 101..103 -> one support zone (edges = bottom of rowFrom / top of rowTo)
+NQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.02 a 3-row run is not a stack when stackMinRows = 4
+FF	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.03 SELL stack rows 100..102 -> one resistance zone
+HK	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.04 BUY zone: above -> none, low <= top -> touch, low < bottom -> filled
+GG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.05 SELL zone: below -> none, high >= bottom -> touch, high > top -> filled
+NI	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+QG	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+HK	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.06 engine init (historyBars=0) -> HistoryReady immediately
+HQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.07 bar A finalised with BUY tiers 1/3/3 on rows 101..103
+NQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.08 A's stack became an open zone during A's finalisation (origin bar does not touch itself)
+MR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.09 B entered the zone without filling it -> touches 1, lastTouchTime = B
+KP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.10 C stayed above the zone -> no touch
+HH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.11 D traded below the zone -> filledTime = D; Zones(false) hides it, Zones(true) keeps it
+KD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 4.12 session cumDelta through A..D = 3+1+2-1 = 5
+RK	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 5.01 VA 70%: POC 4, pairs below (60) then above (55) -> VAL 2, VAH 6
+PM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 5.02 VA tie between pairs -> above wins
+PR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 5.03 VA with the POC on the top row expands downward only
+FG	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+IR	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+RE	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+MS	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+ND	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+QP	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+JK	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+EF	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+HE	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.01 engines init
+NP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.02 one batch of 5 ticks -> 5 counted
+CI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.03 second batch skips the 2 already-processed ticks of the same ms
+QD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.04 two overlapping batches == one batch
+EN	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.05 re-fetching the last ms adds nothing
+JI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.06 k grows inside the same ms (2,1,2 new ticks)
+JF	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.07 Update(): CopyTicks(from=lastMsc) re-delivers same-ms ticks, de-dup keeps 5
+OG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.08 Update() never calls CopyTicks with from = 0
+DO	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+GJ	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+DL	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 6.09 one tick per FeedTicks (t2,t3,t4 share a ms) -> all 5 counted
+CN	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 7.01 classifier: BID/ASK-only tick with stale volume>0 and last>0 is not a print
+HP	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=1 pts (0.001) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+QS	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=EXCHANGE_FLAGS (explicit)
+IO	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 7.02 engine EXCHANGE: only the 2 trade ticks count (volume 5 = 2 buy + 3 sell)
+NR	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=1 pts (0.001) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+CN	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=TRADE_TICKS (explicit)
+MP	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 7.03 engine TRADE: only the 2 trade ticks count (volume 5 = 2 buy + 3 sell)
+HG	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+CR	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+DF	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+GS	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+PD	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 0 min | script(chunked, blocking)
+KP	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+DD	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.01 engines init
+CR	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.02 live-accumulated bar == bar rebuilt from Range at every boundary (5/5)
+OS	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.03 Update() path consumed every tick exactly once
+ED	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.04 tick-by-tick == one batch == Update() with arrival in groups (all 6 bars)
+QH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.05 bar A (unseeded start) = 2.5x1.5 | 0x2, delta +1, max 2, min 0
+DH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.06 bar B: first tick (mid unchanged) takes the side seeded from A's ticks (BUY 1.0, not a 50/50 split)
+HI	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.07 W is a SELL (seeded by B), X is a BUY (seeded by W, 1 ms before it)
+DF	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 8.08 bar C: seed window [C-300 s, C) holds only X (W is 1 ms outside) and X's own BUY state is NOT carried -> c1 split
+JO	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.01 PopClosedBar: each live-closed bar exactly once, FIFO, then empty
+KH	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.02 PrevBarTime walks held bars (gaps skipped; 0 for oldest / not held)
+DJ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.03 At()/ByTime()/Total()
+CQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.04 Prints(): newest first (d1 BUY, c2 BUY, c1 split)
+KM	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.05 RangeProfile(shift 1..2) = C + X
+QE	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: init XAUUSD M1 | bucket=10 pts (0.010) [explicit] | history=0 | session start 605 min | script(chunked, blocking)
+GS	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: source=QUOTE_TICKS (explicit)
+QG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.06 SessionStart = latest time <= t at the session time-of-day
+NG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.07 cumDelta accumulates per session and resets at the session start
+IG	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.08 SessionProfile(S1): rows 99..102 = [1,4,5,1], POC row 101, VA rows 99..101
+GJ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.09 SessionVWAP(S2) = mid of row 100 (closed bars X, C only)
+HL	0	20:16:43.665	FPTests (XAUUSD,M5)	OrderFlowFP: Init failed: timeframe PERIOD_W1 not supported (M1..D1 only; W1/MN are rejected)
+QQ	0	20:16:43.665	FPTests (XAUUSD,M5)	PASS 9.10 W1 timeframe -> Init() fails with a message
+NN	0	20:16:43.665	FPTests (XAUUSD,M5)	FPTests: 100 passed, 0 failed, 100 total -> ALL PASS
