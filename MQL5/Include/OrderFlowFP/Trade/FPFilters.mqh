@@ -386,15 +386,15 @@ bool CFPFilters::CheckSignal(const FPSignal &sig, CFPBar *bar, const FPContext &
    bool regimeOk = (ctx.atrRatio > 0.0);
    if(regimeOk)
    {
-      if(sig.type == FP_SIG_ZONE_RETEST)
-         regimeOk = (ctx.atrRatio >= m_cfg.szrMinAtrRatio);
+      if(sig.type == FP_SIG_ZONE_RETEST || sig.type == FP_SIG_STACK_BREAKOUT)
+         regimeOk = (ctx.atrRatio >= m_cfg.szrMinAtrRatio);   // continuation: not in CHOP
       else
          regimeOk = (ctx.atrRatio <= m_cfg.revMaxAtrRatio);   // ABS / EXH / standalone DIV (reversals)
    }
    if(!regimeOk)
       Add(reasons, "REGIME");
-   //--- HTF trend: hard for SZR only (ABS/EXH score it in the grade)
-   if(sig.type == FP_SIG_ZONE_RETEST && ctx.htfBias != sig.dir)
+   //--- HTF trend: hard for the continuation setups SZR and SIB (ABS/EXH score it in the grade)
+   if((sig.type == FP_SIG_ZONE_RETEST || sig.type == FP_SIG_STACK_BREAKOUT) && ctx.htfBias != sig.dir)
       Add(reasons, "HTF");
    //--- news (live only)
    if(NewsBlocked(t))

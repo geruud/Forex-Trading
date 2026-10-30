@@ -18,7 +18,9 @@
 //|                                                                    |
 //| v1.11: tick feed held while disconnected / just reconnected (no    |
 //| more minute-long OnTick blocks), EA status heartbeat for the chart |
-//| badge (FPStatus.mqh), stable auto row size.                        |
+//| badge (FPStatus.mqh), stable auto row size. Defaults: min 2 grade  |
+//| points, 0.25 % risk, 10 % kill switch. New research setup SIB      |
+//| (stacked-imbalance breakout), off by default.                      |
 //+------------------------------------------------------------------+
 #property copyright   "FootprintTrader"
 #property version     "1.11"
@@ -71,6 +73,11 @@ input double                 InpSZRMaxHeightATR   = 0.6;         // SZR max zone
 input int                    InpSZRMaxAgeBars     = 30;          // SZR max zone age, bars [10..60 step 10]
 input int                    InpSZRMaxTouches     = 1;           // SZR max touches before the retest [fixed 1]
 
+input group "SIB (v1.11 research setup - test in VIRTUAL before LIVE)"
+input bool                   InpSIBEnable         = false;       // SIB: breakout of a fresh stacked-imbalance zone (continuation) [false/true per study]
+input int                    InpSIBLookback       = 10;          // SIB: the bar must make a new high/low of this many bars [5..30 step 5]
+input int                    InpSIBValidBars      = 2;           // SIB: stop-entry validity, bars [1..4 step 1]
+
 input group "ABS/EXH"
 input bool                   InpRevEnable         = true;        // ABS/EXH: enable reversal setups [fixed]
 input int                    InpRevLookback       = 20;          // Extreme lookback, bars [10..40 step 5]
@@ -91,7 +98,7 @@ input bool                   InpDIVStandalone     = false;       // Trade DIV st
 
 input group "Grade"
 input ENUM_FP_GRADE          InpMinGrade          = FP_GRADE_C;  // Minimum grade to trade [C, B or A] (spec B)
-input int                    InpMinPoints         = 1;           // Minimum grade points to trade (0..5; grade C = 0-2 points; spec 0) [0..3 step 1]
+input int                    InpMinPoints         = 2;           // Minimum grade points to trade (0..5; grade C = 0-2 points; v1.10 1, spec 0) [0..3 step 1]
 
 input group "Filters"
 input int                    InpMinTicksPerBar    = 60;          // Min ticks per bar (M1 20, M5 60, M15 150) [fixed per TF]
@@ -110,13 +117,13 @@ input int                    InpNewsMin           = 15;          // News blackou
 input int                    InpMaxPositions      = 1;           // Max positions + pending entries of this magic [fixed 1]
 
 input group "Risk"
-input double                 InpRiskPct           = 0.5;         // Risk per trade, % of equity [0.1..1.0 step 0.1]
+input double                 InpRiskPct           = 0.25;        // Risk per trade, % of equity (v1.10 and spec 0.5) [0.1..1.0 step 0.1]
 input bool                   InpAllowMinLot       = false;       // Trade the minimum lot if the size is below it [fixed false]
 input int                    InpMaxTradesPerDay   = 10;          // Max entries per server day (0 = off; spec 4) [fixed]
 input double                 InpMaxDailyLossPct   = 2.0;         // Max daily loss, % of day-start equity (0 = off) [fixed 2]
 input int                    InpMaxConsecLosses   = 3;           // Consecutive losses -> pause (0 = off) [fixed 3]
 input int                    InpConsecPauseMin    = 60;          // Pause after the consecutive losses, minutes (0 = until the next server day = spec) [0..240 step 30]
-input double                 InpMaxDDPct          = 15;          // Kill switch: equity DD from peak, % (0 = off; spec 10) [fixed]
+input double                 InpMaxDDPct          = 10;          // Kill switch: equity DD from peak, % (0 = off; v1.10 15, spec 10) [fixed]
 
 input group "Exits"
 input double                 InpSLBufferATR       = 0.10;        // Stop buffer x ATR [0.05..0.3 step 0.05]
@@ -665,6 +672,7 @@ int OnInit()
    if(InpConsecPauseMin < 0 || InpConsecPauseMin > 1440) FTAddReason(bad, "0<=InpConsecPauseMin<=1440");
    if(InpMinPoints < 0 || InpMinPoints > 5)              FTAddReason(bad, "0<=InpMinPoints<=5");
    if(InpMaxLatePendingSec < 0)                          FTAddReason(bad, "InpMaxLatePendingSec>=0");
+   if(InpSIBLookback < 1 || InpSIBValidBars < 1)         FTAddReason(bad, "InpSIBLookback>=1,InpSIBValidBars>=1");
    if(bad != "")
    {
       Print("FT INIT: invalid inputs: ", bad);
@@ -739,6 +747,9 @@ int OnInit()
    sc.valueAreaPct      = ec.valueAreaPct;   // signals-agent addition: must equal the engine's value area
    sc.placeboWickFrac   = 0.40;              // signals-agent addition (placebo ABS), its documented default
    sc.placeboSzrBodyATR = 0.60;              // signals-agent addition (placebo SZR), its documented default
+   sc.sibEnable         = InpSIBEnable;
+   sc.sibLookback       = InpSIBLookback;
+   sc.sibValidBars      = InpSIBValidBars;
    if(!g_signals.Init(GetPointer(g_engine), sc))
    {
       Print("FT INIT: signals Init failed");

@@ -86,6 +86,7 @@ int FTSetupFromName(const string s)
    if(s == "ABS") return (int)FP_SIG_ABSORPTION;
    if(s == "EXH") return (int)FP_SIG_EXHAUSTION;
    if(s == "DIV") return (int)FP_SIG_DELTA_DIVERGENCE;
+   if(s == "SIB") return (int)FP_SIG_STACK_BREAKOUT;
    return (int)FP_SIG_NONE;
 }
 
@@ -558,7 +559,9 @@ public:
          return false;
       }
       //--- target
-      double mult = (sig.type == FP_SIG_ZONE_RETEST) ? m_c.tpRSzr : m_c.tpRRev;
+      //--- continuation setups (SZR, SIB) use the SZR target, reversals the REV target
+      bool   cont = (sig.type == FP_SIG_ZONE_RETEST || sig.type == FP_SIG_STACK_BREAKOUT);
+      double mult = cont ? m_c.tpRSzr : m_c.tpRRev;
       double tp = (mult > 0.0) ? entry + dir * mult * p.rPrice : 0.0;
       if(m_c.tpMode == FP_TP_STRUCTURE && sig.tpStructure > 0.0)
       {

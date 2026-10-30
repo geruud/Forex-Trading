@@ -15,7 +15,8 @@ enum ENUM_FP_SIGNAL
    FP_SIG_ZONE_RETEST      = 1,
    FP_SIG_ABSORPTION       = 2,
    FP_SIG_EXHAUSTION       = 3,
-   FP_SIG_DELTA_DIVERGENCE = 4
+   FP_SIG_DELTA_DIVERGENCE = 4,
+   FP_SIG_STACK_BREAKOUT   = 5    // v1.11 research setup: breakout of a fresh stacked-imbalance zone (continuation)
 };
 
 //--- how a signal is entered
@@ -206,6 +207,10 @@ struct FPSignalConfig
    double            valueAreaPct;        // 0.70  session value area; must equal the engine's FPConfig.valueAreaPct
    double            placeboWickFrac;     // 0.40  placebo ABS: rejection wick >= this fraction of the bar range
    double            placeboSzrBodyATR;   // 0.60  placebo SZR: origin-bar body >= this x ATR(origin bar)
+   //--- v1.11 additions: SIB, stacked-imbalance breakout (off by default; research setup)
+   bool              sibEnable;           // InpSIBEnable     false
+   int               sibLookback;         // InpSIBLookback   10  the bar must make a new high (long) / low (short) of this many bars
+   int               sibValidBars;        // InpSIBValidBars  2   stop-entry validity, bars
 };
 
 //+------------------------------------------------------------------+
@@ -270,6 +275,7 @@ string FPSetupName(const ENUM_FP_SIGNAL type)
       case FP_SIG_ABSORPTION:       return "ABS";
       case FP_SIG_EXHAUSTION:       return "EXH";
       case FP_SIG_DELTA_DIVERGENCE: return "DIV";
+      case FP_SIG_STACK_BREAKOUT:   return "SIB";
       default:                      return "NONE";
    }
 }

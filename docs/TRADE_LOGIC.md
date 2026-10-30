@@ -1,4 +1,6 @@
-# How FootprintTrader trades (v1.10 defaults, XAUUSD M5)
+# How FootprintTrader trades (v1.11 defaults, XAUUSD M5)
+
+> **v1.11 changes:** a signal now needs **at least 2 points** (was 1), each trade risks **0.25 %** (was 0.5 %), and the kill switch is at **10 %** (was 15 %). Expect about 3 trades a day instead of 7; in the June–August test those were the better ones. A new setup, **SIB** (below), is off by default. The rest of this page still describes the v1.10 numbers where it quotes test results.
 
 This page is for traders who don't read code. It describes what the EA does with its **default inputs**. The original specification behaves differently; its values are in `MQL5\Presets\FootprintTrader_spec.set`. The reasons for each change are in `docs\decisions\frequency.md`.
 
@@ -42,6 +44,8 @@ Between bar closes, on every tick, it does the following:
 - **The trend condition.** The trade must agree with the H1 trend (H1 close above its EMA 50).
 - **The entry.** Market order at the next bar's open.
 
+**SIB — stacked-imbalance breakout (v1.11, off by default, research).** The bar that *forms* a qualifying stack of buy imbalances (the SZR zone rules) also makes a new 10-bar high and closes above the stack. A buy-stop goes at that bar's high, the stop below the stack, and the order is cancelled if price falls back below the stack. It needs the H1 trend on its side, like SZR. The idea: SZR waits for a retest that comes about once a month; SIB trades the breakout itself. Untested: turn it on in VIRTUAL and compare it with the placebo before trading it.
+
 **Delta divergence** is not traded on its own. It only adds a grade point.
 
 ## 3. Grade and filters
@@ -53,7 +57,7 @@ Between bar closes, on every tick, it does the following:
 - a delta divergence was confirmed within the last 3 bars;
 - volatility is "normal" (ATR(14) between 0.85× and 1.15× its 50-bar average).
 
-The grade follows from the points: **A** = 4–5, **B** = 3, **C** = 0–2. The EA trades **any grade with at least 1 point**: grade C is allowed, but a signal with no confluence at all is not. Grades are logged for analysis.
+The grade follows from the points: **A** = 4–5, **B** = 3, **C** = 0–2. The EA trades **any grade with at least 2 points** (v1.11; v1.10 needed 1): grade C is allowed, but a signal with fewer than 2 confluences is not. Grades are logged for analysis.
 
 **Filters**, checked when the signal appears:
 - **Session:** all day, server time. No new entries on Friday after 18:00.
@@ -80,12 +84,12 @@ Shorts are the mirror image. Once a trade is open, the exits work as follows:
 
 ## 5. Size and daily limits
 
-- **Size.** Each trade risks **0.5 % of equity** at the initial stop. Lots are rounded down to the broker's step, and trades below the minimum lot are skipped. There is no martingale, grid or averaging, and size never increases after a loss.
+- **Size.** Each trade risks **0.25 % of equity** at the initial stop (v1.10: 0.5 %). Lots are rounded down to the broker's step, and trades below the minimum lot are skipped. There is no martingale, grid or averaging, and size never increases after a loss.
 - **Daily limits** (server day):
   - at most **10** entries;
   - stop trading for the day after a loss of **2 %** of the day's starting equity (closed plus open P/L);
   - after **3 losses in a row**, pause new entries for **60 minutes**.
-- **Kill switch.** At a **15 %** drawdown from the equity peak, the EA closes everything and stops for good, and raises an alert. To re-enable it, delete the `FT_<symbol>_<magic>_KILL/PEAK` global variables (F3).
+- **Kill switch.** At a **10 %** drawdown (v1.10: 15 %) from the equity peak, the EA closes everything and stops for good, and raises an alert. To re-enable it, delete the `FT_<symbol>_<magic>_KILL/PEAK` global variables (F3).
 - **Restarts.** The EA rebuilds its state after a restart from the trade history and global variables.
 
 ## 6. What is logged where

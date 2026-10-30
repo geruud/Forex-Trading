@@ -224,6 +224,13 @@ void TestLocationAndGrade(void)
    Check("LOC.short.false", !CFPSignals::LocationOK(109.5, highs, -1));
    double none[];
    Check("LOC.false.noPriorBars", !CFPSignals::LocationOK(99.0, none, 1));
+   //--- v1.11 SIB breakout location = LocationOK with the opposite direction (long: high >= every prior high)
+   Check("SIB.long.breakout", CFPSignals::LocationOK(110.0, highs, -1) && !CFPSignals::LocationOK(109.9, highs, -1));
+   Check("SIB.short.breakout", CFPSignals::LocationOK(99.5, lows, 1) && !CFPSignals::LocationOK(99.6, lows, 1));
+   Check("SIB.name", FPSetupName(FP_SIG_STACK_BREAKOUT) == "SIB");
+   FPSignalConfig dc;
+   CFPSignals::DefaultConfig(dc);
+   Check("SIB.defaultOff", !dc.sibEnable && dc.sibLookback == 10 && dc.sibValidBars == 2);
    Check("GRADE.5=A", CFPSignals::GradeFromPoints(5) == FP_GRADE_A);
    Check("GRADE.4=A", CFPSignals::GradeFromPoints(4) == FP_GRADE_A);
    Check("GRADE.3=B", CFPSignals::GradeFromPoints(3) == FP_GRADE_B);
